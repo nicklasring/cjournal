@@ -160,20 +160,39 @@ char * get_current_date() {
 	return date_heap_alloc;
 }
 
+char * get_current_user() {
+	char user_name[64] = {0};
+	if( getlogin_r(user_name, sizeof(user_name)-1) != 0 ) {
+		printf("Error fetching current user");
+		exit(1);
+	}
+
+	// Allocate memory on heap for user_name and return pointer
+	char * username_heap_alloc = malloc( strlen(user_name) + 1 ); // Nullterminator + 1
+	if( username_heap_alloc ) {
+		memcpy( username_heap_alloc, user_name, strlen(user_name) + 1 );
+	}
+
+	return username_heap_alloc;
+}
+
 /*
  Creates todays active journal folder
  Returns path
  */
 char * get_journal_folder() {
-	const char * base_path = "$HOME/.scjournals/";
+	char * current_user = get_current_user();
 	char * current_date = get_current_date();
+	
 	char journal_folder[128];
 
-	snprintf( journal_folder, sizeof(journal_folder), "%s%s",
-		base_path,
+	snprintf( journal_folder, sizeof(journal_folder), "/home/%s/.scjournals/%s",
+		current_user,
 		current_date
 	);
 
+	// Free the pointers from memory
+	free(current_user);
 	free(current_date);
 
 	// Allocate memory on heap for journal_folder and return pointer
@@ -181,6 +200,7 @@ char * get_journal_folder() {
 	if( journal_folder_heap_alloc ) {
 		memcpy( journal_folder_heap_alloc, journal_folder, strlen(journal_folder) + 1 );
 	}
+
 	return journal_folder_heap_alloc;
 }
 
@@ -197,11 +217,6 @@ char * get_journal_folder() {
 		Simply allows for screenshot capture
 		Saves screenshot with date in .journal/2020-01-01/1.png
 */
-
-/* Input arguments struct */
-struct Journal  {
-	const char * journal_entry;
-};
 
 struct Journal parse_input_arguments( int argc, char *argv[] ) {
 
@@ -221,7 +236,7 @@ struct Journal parse_input_arguments( int argc, char *argv[] ) {
 
 const char * write_journal( const char* journal_entry ) {
 	FILE * f = NULL;
-	const char* mode = "w\0";
+	const char * mode = "w\0";
 	f = fopen("./test.txt", mode);
 	fprintf(f, journal_entry);
 	fclose(f);
