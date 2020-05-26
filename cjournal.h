@@ -13,6 +13,7 @@
 #include <unistd.h>
 #include <pwd.h>
 #include <sys/types.h>
+#include <sys/stat.h>
 
 /* Journal struct */
 struct Journal  {

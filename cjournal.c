@@ -183,10 +183,10 @@ char * get_current_user() {
 char * get_journal_folder() {
 	char * current_user = get_current_user();
 	char * current_date = get_current_date();
-	
+
 	char journal_folder[128];
 
-	snprintf( journal_folder, sizeof(journal_folder), "/home/%s/.scjournals/%s",
+	snprintf( journal_folder, sizeof(journal_folder), "/home/%s/.cjournals/%s",
 		current_user,
 		current_date
 	);
@@ -204,20 +204,6 @@ char * get_journal_folder() {
 	return journal_folder_heap_alloc;
 }
 
-/* TODO:
-	Create journal folder
-	arguments:
-		./scjournal -j "Text"
-		Generates screenshot region capture
-		Opens vim to enter journal message (Like git commits)
-		Saves screenshot with date in .journal/2020-01-01/1.png
-		Saves Journal in .journal/2020-01-01/1.txt
-
-		./scjournal
-		Simply allows for screenshot capture
-		Saves screenshot with date in .journal/2020-01-01/1.png
-*/
-
 struct Journal parse_input_arguments( int argc, char *argv[] ) {
 
 	struct Journal journal;
@@ -234,6 +220,16 @@ struct Journal parse_input_arguments( int argc, char *argv[] ) {
 	return journal;
 }
 
+int create_directory( char * directory ) {
+	struct stat st = {0};
+	if( stat(directory, &st) == -1 ) {
+		mkdir(directory, 0700);
+		return 0;
+	}
+
+	return 1;
+}
+
 const char * write_journal( const char* journal_entry ) {
 	FILE * f = NULL;
 	const char * mode = "w\0";
@@ -243,10 +239,28 @@ const char * write_journal( const char* journal_entry ) {
 	return "";
 } 
 
+
+/* TODO:
+	Make the create_directory function recursive
+	
+	arguments:
+		./scjournal -j "Text"
+		Generates screenshot region capture
+		Opens vim to enter journal message (Like git commits)
+		Saves screenshot with date in .journal/2020-01-01/1.png
+		Saves Journal in .journal/2020-01-01/1.txt
+
+		./scjournal
+		Simply allows for screenshot capture
+		Saves screenshot with date in .journal/2020-01-01/1.png
+*/
 int main(int argc, char *argv[]) {
 
 	char * journal_folder = get_journal_folder();
-	printf("%s\n", journal_folder);
+	printf("%s", journal_folder);
+	if( create_directory( journal_folder ) == 0 ) {
+		printf("Journal directory created\n");
+	}
 
 	struct Journal journal = parse_input_arguments( argc, argv );
 
