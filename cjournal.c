@@ -219,9 +219,28 @@ struct Journal parse_input_arguments( int argc, char *argv[] ) {
 	journal.journal_entry = "\0";
 	return journal;
 }
-
-int create_directory( char * directory ) {
+/*
+ Recursive creation of directories
+ TODO: Make actual recursive function
+*/
+int r_create_directory( char * directory ) {
 	struct stat st = {0};
+	const char * delimiter = "/";
+	char directory_parts[128];
+	char * token;
+
+	token = strtok( directory, delimiter );
+
+	/* walk through other tokens */
+	while( token != NULL ) {
+		printf("%s", token);
+
+		// FIXME: Concat token to directory_parts here
+		// And run the create directory logic after each iteration, trying to create
+		// /dir/dir/dir/dir
+		token = strtok(NULL, delimiter);
+	}
+
 	if( stat(directory, &st) == -1 ) {
 		mkdir(directory, 0700);
 		return 0;
@@ -239,10 +258,9 @@ const char * write_journal( const char* journal_entry ) {
 	return "";
 } 
 
-
 /* TODO:
-	Make the create_directory function recursive
-	
+	Make the r_create_directory function recursive
+
 	arguments:
 		./scjournal -j "Text"
 		Generates screenshot region capture
@@ -257,12 +275,13 @@ const char * write_journal( const char* journal_entry ) {
 int main(int argc, char *argv[]) {
 
 	char * journal_folder = get_journal_folder();
-	printf("%s", journal_folder);
-	if( create_directory( journal_folder ) == 0 ) {
+	if( r_create_directory( journal_folder ) == 0 ) {
 		printf("Journal directory created\n");
 	}
 
-	struct Journal journal = parse_input_arguments( argc, argv );
+	return 0;
+
+	/* struct Journal journal = parse_input_arguments( argc, argv );
 
 	if( *journal.journal_entry != 0 ) {
 		printf("Adding journal entry: %s\n", journal.journal_entry);
@@ -271,5 +290,5 @@ int main(int argc, char *argv[]) {
 
 	free(journal_folder);
 
-	return region_capture();
+	return region_capture(); */
 }
