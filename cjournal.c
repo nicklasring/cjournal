@@ -3,7 +3,7 @@
 /* 
  Grabs surface of Gdk root window with given coords and generates screen capture
  */
-void region_to_png( int rw, int rh, int rx, int ry) {
+void region_to_png( int rw, int rh, int rx, int ry ) {
 	gdk_init(0, 0);
 
 	GdkWindow *root_win = gdk_get_default_root_window();
@@ -12,9 +12,9 @@ void region_to_png( int rw, int rh, int rx, int ry) {
 
 	cairo_t *cr = cairo_create(surface);        
 	gdk_cairo_set_source_pixbuf(cr, pb, 0, 0);  
-	cairo_paint(cr);  
+	cairo_paint(cr);
 
-	cairo_surface_write_to_png(surface, "image.png");
+	cairo_surface_write_to_png(surface, "./image.png");
 
 	cairo_destroy(cr);
 	cairo_surface_destroy(surface);
@@ -134,7 +134,7 @@ int region_capture() {
 	XCloseDisplay(disp);
 
 	// Save region to file
-	region_to_png( rw, rh, rx, ry);
+	region_to_png( rw, rh, rx, ry );
 
 	return EXIT_SUCCESS;
 }
@@ -176,6 +176,16 @@ char * get_current_user() {
 	return username_heap_alloc;
 }
 
+int r_create_directory( char * directory ) {
+	struct stat st = {0};
+	if( stat(directory, &st) == -1 ) {
+		mkdir(directory, 0700);
+		return 0;
+	}
+
+	return 1;
+}
+
 /*
  Creates todays active journal folder
  Returns path
@@ -185,6 +195,14 @@ char * get_journal_folder() {
 	char * current_date = get_current_date();
 
 	char journal_folder[128];
+
+	snprintf( journal_folder, sizeof(journal_folder), "/home/%s/.cjournals",
+		current_user
+	);
+
+	if( r_create_directory( journal_folder ) != 0 ) {
+		printf( "Unable to create directory: %s\n", journal_folder );
+	}
 
 	snprintf( journal_folder, sizeof(journal_folder), "/home/%s/.cjournals/%s",
 		current_user,
@@ -210,7 +228,7 @@ struct Journal parse_input_arguments( int argc, char *argv[] ) {
 
 	if( argc > 1 ) {
 		// Check for journal entry flag
-		char journal_flag[3] = "-j\0";
+		char journal_flag[3] = "-w\0";
 		if( strcmp(journal_flag,argv[1]) == 0 ) {
 			journal.journal_entry = argv[2];
 			return journal;
@@ -219,50 +237,27 @@ struct Journal parse_input_arguments( int argc, char *argv[] ) {
 	journal.journal_entry = "\0";
 	return journal;
 }
-/*
- Recursive creation of directories
- TODO: Make actual recursive function
-*/
-int r_create_directory( char * directory ) {
-	struct stat st = {0};
-	const char * delimiter = "/";
-	char directory_parts[128];
-	char * token;
 
-	token = strtok( directory, delimiter );
-
-	/* walk through other tokens */
-	while( token != NULL ) {
-		printf("%s", token);
-
-		// FIXME: Concat token to directory_parts here
-		// And run the create directory logic after each iteration, trying to create
-		// /dir/dir/dir/dir
-		token = strtok(NULL, delimiter);
-	}
-
-	if( stat(directory, &st) == -1 ) {
-		mkdir(directory, 0700);
-		return 0;
-	}
-
-	return 1;
-}
-
-const char * write_journal( const char* journal_entry ) {
+void write_journal( char * directory, const char* journal_entry ) {
 	FILE * f = NULL;
 	const char * mode = "w\0";
-	f = fopen("./test.txt", mode);
+	char journal_entry_file[128];
+
+	snprintf( journal_entry_file, sizeof(journal_entry_file), "%s%s",
+		directory,
+		"/1.txt" // Txt files existing +1
+	);
+
+	printf("%s", journal_entry_file);
+
+	f = fopen( journal_entry_file, mode );
 	fprintf(f, journal_entry);
 	fclose(f);
-	return "";
 } 
 
 /* TODO:
-	Make the r_create_directory function recursive
-
 	arguments:
-		./scjournal -j "Text"
+		./scjournal -w "Text"
 		Generates screenshot region capture
 		Opens vim to enter journal message (Like git commits)
 		Saves screenshot with date in .journal/2020-01-01/1.png
@@ -279,16 +274,14 @@ int main(int argc, char *argv[]) {
 		printf("Journal directory created\n");
 	}
 
-	return 0;
-
-	/* struct Journal journal = parse_input_arguments( argc, argv );
+	struct Journal journal = parse_input_arguments( argc, argv );
 
 	if( *journal.journal_entry != 0 ) {
 		printf("Adding journal entry: %s\n", journal.journal_entry);
-		write_journal( journal.journal_entry );
+		write_journal( journal_folder, journal.journal_entry );
 	}
 
 	free(journal_folder);
 
-	return region_capture(); */
+	return region_capture( );
 }
